@@ -6,13 +6,16 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-COPY requirements.txt ./
+# Install dependencies first for better Railway/Docker layer caching.
+COPY requirements.txt /app/requirements.txt
 RUN python -m pip install --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
+    python -m pip install --no-cache-dir -r /app/requirements.txt
 
-COPY bot.py ./
-COPY .env.example ./
+# Copy only files required at runtime. Railway environment variables are
+# provided through the service Variables panel, so no .env file is needed.
+COPY bot.py /app/bot.py
 
+# SQLite data directory (attach a Railway Volume to /app/data if persistence is needed).
 RUN mkdir -p /app/data
 
-CMD ["python", "-u", "bot.py"]
+CMD ["python", "-u", "/app/bot.py"]
