@@ -28,7 +28,7 @@ const client = new Client({
   intents:[
     GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers, GatewayIntentBits.GuildModeration,
     GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent, GatewayIntentBits.GuildVoiceStates,
-    GatewayIntentBits.GuildPresences, GatewayIntentBits.GuildInvites
+    GatewayIntentBits.GuildInvites
   ],
   partials:[Partials.Channel,Partials.Message,Partials.GuildMember,Partials.User]
 });
@@ -272,13 +272,20 @@ async function ownerSlash(i){
 }
 
 const slashCommands=[ownerData];
-const REST={async register(){const {REST,Routes}=await import('discord.js');const r=new REST({version:'10'}).setToken(TOKEN);await r.put(Routes.applicationCommands(client.user.id),{body:slashCommands});}};
+const REST={async register(){
+  const {REST,Routes}=await import('discord.js');
+  const r=new REST({version:'10'}).setToken(TOKEN);
+  const guildId=process.env.DISCORD_GUILD_ID;
+  if(guildId) await r.put(Routes.applicationGuildCommands(client.user.id,guildId),{body:slashCommands});
+  else await r.put(Routes.applicationCommands(client.user.id),{body:slashCommands});
+}};
 
 client.once('ready',async()=>{
-  console.log(`✅ Logged in as ${client.user.tag}`);
+  console.log(`✅ Logged in as ${client.user.tag} (${client.user.id})`);
+  console.log(`🌐 Guilds: ${client.guilds.cache.size}`);
   client.user.setActivity('server security',{type:ActivityType.Watching});
   for(const g of client.guilds.cache.values()){cfg(g.id);await snapshotGuild(g).catch(()=>{});}
-  await REST.register().catch(e=>console.error('Slash registration:',e.message));
+  await REST.register().then(()=>console.log(process.env.DISCORD_GUILD_ID ? '✅ Guild slash commands registered.' : '✅ Global slash commands registered.')).catch(e=>console.error('❌ Slash registration failed:',e));
   console.log(`✅ ${client.guilds.cache.size} guild(s) ready.`);
 });
 
@@ -510,4 +517,12 @@ setInterval(async()=>{for(const g of client.guilds.cache.values()){if(cfg(g.id).
 
 process.on('unhandledRejection',e=>console.error('Unhandled rejection:',e));
 process.on('uncaughtException',e=>console.error('Uncaught exception:',e));
-await client.login(TOKEN);
+client.on('error',e=>console.error('❌ Discord client error:',e));
+client.on('shardError',e=>console.error('❌ Discord gateway error:',e));
+client.on('invalidated',()=>console.error('❌ Discord session invalidated. Check token/application.'));
+try {
+  await client.login(TOKEN);
+} catch (e) {
+  console.error('❌ Discord login failed:', e);
+  process.exit(1);
+}

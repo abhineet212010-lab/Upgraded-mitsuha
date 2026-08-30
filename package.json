@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "description": "Kiara Discord bot with the requested prefix moderation, security, welcome, logging, utility, voice, tracking and role features.",
   "type": "module",
-  "main": "src/app.js",
+  "main": "index.js",
   "scripts": {
-    "start": "node src/app.js"
+    "start": "node index.js"
   },
   "engines": {
     "node": ">=20.10.0"
