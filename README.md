@@ -1,22 +1,27 @@
-# Anistropic Discord Bot — Railway Docker Edition
+# Kiara — Requested Feature Build
 
-## Railway deployment
-1. Upload this folder to a GitHub repository.
-2. In Railway, create a service from that repository.
-3. Railway will detect `Dockerfile` automatically.
-4. Add these Variables:
-   - `DISCORD_TOKEN` = your Discord bot token
+This build contains only the requested feature groups:
+General, Moderation, Antinuke, Anti-raid, Welcome, Logging, Utility, Voice, Tracking, Roles, Automod/Antispam/Antilink/Antiword, and `/owner`.
+
+## Railway
+1. Push the contents of this repository to GitHub.
+2. Create a Railway service from the repository.
+3. Railway uses the included Dockerfile automatically.
+4. Add Variables:
+   - `DISCORD_TOKEN` = Discord bot token
    - `BOT_OWNER_ID` = your Discord user ID
-5. Optional but recommended: attach a Railway Volume mounted at `/app/data` so SQLite survives redeploys.
-6. Deploy. The container starts with `python -u bot.py`.
+   - `DATA_DIR` = `/app/data` (recommended)
+5. Attach a Railway Volume mounted at `/app/data` for persistent state/recovery snapshots.
 
-## Discord Developer Portal
-Enable these Privileged Gateway Intents for the bot:
-- Server Members Intent
+The bot exposes `/health` and `/` on Railway's `PORT`.
+
+## Discord
+Enable these Privileged Gateway Intents in the Discord Developer Portal:
 - Message Content Intent
-- Presence Intent
+- Server Members Intent
 
-Give the bot only the permissions it actually needs; Administrator is not required for every command.
+The bot also needs the permissions required by the commands (moderation, manage channels/roles, move members, audit log viewing, etc.).
 
-## Important
-The bot is a Discord worker and does not need an HTTP port. Do not add a web server just to satisfy Railway.
+Prefix is `!` by default. Automod commands intentionally use `.` as requested.
+
+Owner commands are slash commands: `/owner ...`.

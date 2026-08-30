@@ -1,0 +1,18 @@
+{
+  "name": "kiara-security-bot",
+  "version": "1.0.0",
+  "description": "Kiara Discord bot with the requested prefix moderation, security, welcome, logging, utility, voice, tracking and role features.",
+  "type": "module",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "node src/app.js"
+  },
+  "engines": {
+    "node": ">=20.10.0"
+  },
+  "dependencies": {
+    "discord.js": "^14.26.4",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0"
+  }
+}
