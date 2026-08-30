@@ -76,7 +76,6 @@ async function requirePerm(msg,p){if(!has(msg.member,p)){await reply(msg,`❌ Yo
 async function requireOwner(msg){if(!isOwner(msg)){await reply(msg,'❌ Owner-only command.');return false}return true}
 function mentionedUser(msg){return msg.mentions.users.first() || null}
 function mentionedMember(msg){return msg.mentions.members.first() || null}
-async function findMember(g,s){return mentionedMember({mentions:msg.mentions})}
 
 async function snapshotGuild(g){
   const snap={at:Date.now(),name:g.name,channels:[],roles:[]};
@@ -309,7 +308,7 @@ client.on('messageCreate',async msg=>{
       if(['antinuke','antiraid','welcomer','logging','automod','antispam','antilink','antiword'].includes(name)){
         await dispatchSecurity(msg,name,a);return;
       }
-      if(['myperms','viewperms','botperms','listadmins','viewroles','prefix','setprefix','leaderboard','viewuser','setidentity','removeidentity','adminview','modview','vckick','vcpull','vcmute','vcdeafen','vcpullall','vckickall','vcdeafenall','vcrole','role','createrole'].includes(name)){
+      if(['myperms','viewperms','botperms','listadmins','list','viewroles','prefix','setprefix','leaderboard','viewuser','setidentity','removeidentity','adminview','modview','vckick','vcpull','vcmute','vcdeafen','vcpullall','vckickall','vcdeafenall','vcrole','role','createrole'].includes(name)){
         await dispatchUtility(msg,name,a);return;
       }
       await handleCommand(msg,name,a);
@@ -379,7 +378,7 @@ async function dispatchSecurity(msg,name,a){
     if(bools.includes(sub)){
       const key=sub==='enable'||sub==='disable'?'enabled':sub;
       c.antiraid[key]=sub==='enable'?true:sub==='disable'?false:!c.antiraid[key];
-      if(key==='lockdown') await setServerLock(g,c.antiraid.lockdown,'Anti-raid lockdown');
+      if(sub==='lockdown') { for(const ch of g.channels.cache.values()) if(ch.isTextBased()&&ch.permissionOverwrites?.edit) await ch.permissionOverwrites.edit(g.roles.everyone,{SendMessages:c.antiraid.lockdown?false:null},{reason:'Anti-raid lockdown'}).catch(()=>{}); }
       await save(); return reply(msg,`✅ antiraid ${sub} updated.`);
     }
     if(sub==='status')return reply(msg,{embeds:[embed('🛡️ Antiraid Status',Object.entries(c.antiraid).map(([k,v])=>`**${k}:** ${typeof v==='object'?JSON.stringify(v):v}`).join('\n'))]});
@@ -490,13 +489,10 @@ client.on('guildMemberAdd',async m=>{
   }
   await log(g,'joinleave','📥 Member joined',`${m} (\`${m.id}\`)`);
 });
-client.on('guildMemberRemove',async m=>log(m.guild,'joinleave','📤 Member left',`${m.user.tag} (\`${m.id}\`)`));
+client.on('guildMemberRemove',async m=>{await log(m.guild,'joinleave','📤 Member left',`${m.user.tag} (\`${m.id}\`)`); const c=cfg(m.guild.id); if(c.antinuke.enabled){const ex=await auditExecutor(m.guild,AuditLogEvent.MemberKick,m.id); if(ex) await punishNuker(m.guild,ex,`Unauthorized kick of ${m.user.tag}`);}});
 client.on('guildBanAdd',async b=>{
   const g=b.guild,c=cfg(g.id);await log(g,'moderation','🔨 Member banned',`${b.user.tag}`);
   if(c.antinuke.enabled){const ex=await auditExecutor(g,AuditLogEvent.MemberBanAdd,b.user.id);await punishNuker(g,ex,`Unauthorized ban of ${b.user.tag}`);}
-});
-client.on('guildMemberRemove',async m=>{
-  const c=cfg(m.guild.id); if(c.antinuke.enabled){const ex=await auditExecutor(m.guild,AuditLogEvent.MemberKick,m.id);if(ex)await punishNuker(m.guild,ex,`Unauthorized kick of ${m.user.tag}`);}
 });
 client.on('channelCreate',async ch=>{await log(ch.guild,'channel','📁 Channel created',`${ch}`);const c=cfg(ch.guild.id);if(c.antinuke.enabled){const ex=await auditExecutor(ch.guild,AuditLogEvent.ChannelCreate,ch.id);await punishNuker(ch.guild,ex,`Unauthorized channel creation: ${ch.name}`);}});
 client.on('channelDelete',async ch=>{await log(ch.guild,'channel','🗑️ Channel deleted',`\`${ch.name}\``);const c=cfg(ch.guild.id);if(c.antinuke.enabled){const ex=await auditExecutor(ch.guild,AuditLogEvent.ChannelDelete,ch.id);await punishNuker(ch.guild,ex,`Unauthorized channel deletion: ${ch.name}`);if(!await authorizedNuker(ch.guild,ex))await restoreSnapshot(ch.guild);}});
